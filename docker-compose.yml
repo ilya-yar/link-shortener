@@ -30,9 +30,10 @@ services:
       - "3306:3306"
     volumes:
       - ./mysql:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    command: --mysql-native-password=ON --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     restart: always # always restart unless stopped manually
     environment:
+      MYSQL_DATABASE: links
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_PASSWORD: secret
     networks:
