@@ -38,6 +38,17 @@ services:
       MYSQL_PASSWORD: secret
     networks:
       - nginx-php-mysql
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-container
+    ports:
+      - "5672:5672"      # для общения с приложением
+      - "15672:15672"    # для панели управления
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - nginx-php-mysql
 networks:
   nginx-php-mysql:
     driver: bridge

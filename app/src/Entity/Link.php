@@ -7,6 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: LinkRepository::class)]
 #[ORM\HasLifecycleCallbacks]
+#[ORM\Table(name: 'link')]
 class Link
 {
     #[ORM\Id]
