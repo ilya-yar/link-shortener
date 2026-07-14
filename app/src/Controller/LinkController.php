@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Repository\LinkRepository;
 use App\Service\LinkService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -13,7 +14,8 @@ final class LinkController extends AbstractController
     #[Route('/link/shortlink', name: 'api_shortlink', methods: ['GET'])]
     public function getShortLink(
         Request $request,
-        LinkService $linkService
+        LinkService $linkService,
+        LinkRepository $linkRepository
     ): JsonResponse {
         $originalUrl = $request->query->get('url');
 
@@ -25,7 +27,7 @@ final class LinkController extends AbstractController
             return $this->json(['error' => 'Invalid URL format'], 400);
         }
 
-        $link = $linkService->findOrCreateByOriginalUrl($originalUrl);
+        $link = $linkRepository->findByOriginalUrl($originalUrl);
 
         if ($link) {
             return $this->json([
@@ -33,6 +35,9 @@ final class LinkController extends AbstractController
                 'original_url' => $link->getOriginalUrl(),
             ]);
         }
+
+        // Если ссылка не найдена в БД, создаем задачу на генерацию хэша
+        $linkService->createTaskMessage($originalUrl);
 
         return $this->json([
             'message' => 'ссылка генерируется',

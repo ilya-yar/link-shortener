@@ -49,6 +49,20 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     networks:
       - nginx-php-mysql
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis-cache
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass redis --appendonly yes
+    networks:
+      - nginx-php-mysql
+    volumes:
+      - redis_data:/data
 networks:
   nginx-php-mysql:
     driver: bridge
+volumes:
+  redis_data:
+    driver: local

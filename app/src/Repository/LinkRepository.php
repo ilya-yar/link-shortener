@@ -16,9 +16,19 @@ class LinkRepository extends ServiceEntityRepository
         parent::__construct($registry, Link::class);
     }
 
+    /**
+     * Поиск по исходной ссылке с использованием md5 хэша для ускорения.
+     *
+     * @param string $original_url
+     * @return Link|null
+     */
     public function findByOriginalUrl(string $original_url): ?Link
     {
-        return $this->findOneBy(['original_url' => $original_url]);
+        $hash = md5($original_url);
+        return $this->findOneBy([
+            'search_hash' => $hash,
+            'original_url' => $original_url
+        ]);
     }
 
     public function findByLinkHash(string $link_hash): ?Link

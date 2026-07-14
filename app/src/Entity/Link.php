@@ -8,6 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: LinkRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Table(name: 'link')]
+#[ORM\Index(name: 'search_hash_idx', columns: ['search_hash'])]
 class Link
 {
     #[ORM\Id]
@@ -18,7 +19,10 @@ class Link
     #[ORM\Column(length: 2048)]
     private ?string $original_url = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 32)]
+    private ?string $search_hash = null;
+
+    #[ORM\Column(length: 255, unique: true)]
     private ?string $link_hash = null;
 
     #[ORM\Column]
@@ -56,34 +60,12 @@ class Link
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?\DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
-    {
-        $this->updatedAt = $updatedAt;
-
-        return $this;
-    }
-
     #[ORM\PrePersist]
     public function onPrePersist(): void
     {
         $now = new \DateTimeImmutable();
+        // При сохранении модели создаем md5 хэш ссылки, по нему будет производиться поиск с использованием индекса.
+        $this->search_hash = md5($this->original_url);
         $this->createdAt = $now;
         $this->updatedAt = $now;
     }
