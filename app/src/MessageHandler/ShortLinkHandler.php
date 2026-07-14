@@ -75,7 +75,6 @@ class ShortLinkHandler
                 rand($minLength, $maxLength)
             );
         } while ($repository->findByLinkHash($hash) !== null);
-        sleep(10);
 
         return $hash;
     }

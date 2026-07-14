@@ -1,11 +1,73 @@
-Сокращатель ссылок на Symfony 6.4
+### Тестовое задание: сокращатель ссылок на Symfony 6.4
 
-Для быстрого создания моделей, контроллеров и т.д. используется Symfony CLI
+#### Решение:
 
-Локальное развертывание проекта:
+- Для быстрого создания моделей, контроллеров и миграций использован Symfony CLI
+- В качестве БД использована MySQL
+- Для хранения блокировок использован RedisStore
+- При получении задания обработчик ставит блокировку на 10 секунд и автоматически снимает её при завершении задания
 
-Создание базы данных:
+Исходная ссылка хранится в поле `original_url`, хэш ссылки хранится в поле `link_hash`.
+Для ускорения поиска по исходным ссылкам добавлено поле `search_hash` — туда сохраняется md5 хэш сырой ссылки.
 
-docker exec -it mysql-container mysql -u root -p
+Это сделано по 2 причинам:
 
-CREATE DATABASE links;
+1. Поле `original_url` слишком большое для формирования индекса в MySQL (лимит 3072 байт).
+2. Для поля `search_hash` можно использовать хэш-индекс (этот тип индексов не поддерживается в MySQL, поэтому идея осталась нереализованной, применён B-Tree индекс). В идеале хранить хэши строк в Redis-кэше — для ещё более быстрого доступа.
+
+#### Локальное развертывание проекта:
+
+Для развертывания потребуется установленный Docker.
+
+1. Склонируйте репозиторий:
+   `git clone git@github.com:ilya-yar/link-shortener.git`
+2. Перейти в папку проекта:
+   `cd link-shortener`
+3. Запустите сборку и запуск контейнеров:
+   `docker compose up -d`
+4. Установите необходимые зависимости:
+   `docker exec -it php-container composer install`
+5. Создайте базу данных:
+   `docker exec -it mysql-container mysql -u root -p` (пароль secret)
+   ```sql
+   CREATE DATABASE links;
+   exit;
+   ```
+6. Выполните миграции.
+   Зайдите в консоль PHP контейнера:
+   `docker exec -it php-container bash`
+   Выполните команду:
+   `php bin/console doctrine:migrations:migrate`
+7. Проверьте, что по адресу http://localhost:8080/ открывается стартовая страница Symfony.
+
+#### Проверка:
+
+Зайдите в консоль PHP контейнера:
+
+`docker exec -it php-container bash`
+
+Запустите обработчик очереди:
+
+`php bin/console messenger:consume async`
+
+Введите адрес вида `http://localhost:8080/link/shortlink?url=https://symfony.com/doc/current/controller.html`
+
+При первом переходе должно появиться сообщение вида:
+
+```json
+{
+    "message": "ссылка генерируется",
+    "original_url": "https://symfony.com/doc/current/controller1.html"
+}
+```
+
+При втором (после выполнения задания в очереди):
+
+```json
+{
+    "link_hash": "65a0",
+    "original_url": "https://symfony.com/doc/current/controller1.html"
+}
+```
+
+Наслаждайтесь сокращением ссылок!
